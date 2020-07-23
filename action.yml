@@ -1,0 +1,11 @@
+name: "Active Build Stage"
+description: "Build Action for GitHub Action"
+author: "Timur Galeev <timur_galeev@outlook.com>"
+
+branding:
+  icon: "box"
+  color: "blue"
+
+runs:
+  using: docker
+  image: docker://timurgaleev/act-build:v0.1.0
