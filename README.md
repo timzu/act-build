@@ -1,4 +1,8 @@
-# Build
+# Action Build
+
+[![GitHub Actions status](https://github.com/timzu/act-build/workflows/Build-Push/badge.svg)](https://github.com/timzu/act-build/actions)
+[![GitHub Releases](https://img.shields.io/github/release/timzu/act-build.svg)](https://github.com/timzu/act-build/releases)
+
 
 ## Usage
 
