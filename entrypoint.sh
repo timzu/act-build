@@ -96,7 +96,7 @@ _commit_pre() {
   fi
 
   if [ -z "${GIT_USERNAME}" ]; then
-    GIT_USERNAME="timurgaleev"
+    GIT_USERNAME="Timur Galeev"
   fi
 
   if [ -z "${GIT_USEREMAIL}" ]; then
