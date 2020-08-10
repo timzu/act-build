@@ -8,4 +8,4 @@ branding:
 
 runs:
   using: docker
-  image: docker://timzu/act-build:v0.2.8
+  image: docker://timzu/act-build:v0.2.9
