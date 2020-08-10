@@ -21,12 +21,12 @@ jobs:
           fetch-depth: 1
 
       - name: Bump Version
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --version
 
       - name: Commit & Push to GitHub
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --commit
         env:
@@ -34,7 +34,7 @@ jobs:
           MESSAGE_PATH: ./target/commit_message
 
       - name: Publish to AWS S3
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --publish
         env:
@@ -46,7 +46,7 @@ jobs:
           OPTIONS: "--acl public-read"
 
       - name: Release to GitHub
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --release
         env:
@@ -54,7 +54,7 @@ jobs:
           TAG_NAME: "v0.0.1"
 
       - name: Docker Build & Push to Docker Hub
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --docker
         env:
@@ -66,7 +66,7 @@ jobs:
           LATEST: "true"
 
       - name: Docker Build & Push to GitHub Package
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --docker
         env:
@@ -79,7 +79,7 @@ jobs:
           LATEST: "true"
 
       - name: Docker Build & Push to AWS ECR
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --ecr
         env:
@@ -91,7 +91,7 @@ jobs:
           LATEST: "true"
 
       - name: Post to Slack
-        uses: timurgaleev/act-build@master
+        uses: timzu/act-build@master
         with:
           args: --slack
         env:
