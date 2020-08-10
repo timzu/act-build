@@ -5,7 +5,7 @@ LABEL "com.github.actions.description"="GitHub Action Builder"
 LABEL "com.github.actions.icon"="box"
 LABEL "com.github.actions.color"="blue"
 
-LABEL version=v0.1.3
+LABEL version=v0.1.4
 LABEL repository="https://github.com/timurgaleev/act-build"
 LABEL maintainer="Timur Galeev <timur_galeev@outlook.com>"
 
