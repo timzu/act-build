@@ -55,7 +55,7 @@ _version() {
     VERSION="${MAJOR}.${MINOR}.${PATCH}"
     printf "${VERSION}" > ./VERSION
   else
-if [ "${GITHUB_TOKEN}" != "" ]; then
+    if [ "${GITHUB_TOKEN}" != "" ]; then
       AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 
       URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
@@ -241,7 +241,13 @@ _release_pre() {
 
 _release_id() {
   URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
-  RELEASE_ID=$(curl -s ${URL} | TAG_NAME=${TAG_NAME} jq -r '.[] | select(.tag_name == env.TAG_NAME) | .id' | xargs)
+  curl \
+    -sSL \
+    -H "${AUTH_HEADER}" \
+    ${URL} > /tmp/releases
+
+  RELEASE_ID=$(cat /tmp/releases | TAG_NAME=${TAG_NAME} jq -r '.[] | select(.tag_name == env.TAG_NAME) | .id' | xargs)
+
   echo "RELEASE_ID: ${RELEASE_ID}"
 }
 
