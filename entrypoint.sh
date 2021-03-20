@@ -82,11 +82,24 @@ _version() {
     VERSION="${MAJOR}.${MINOR}.${PATCH}"
     printf "${VERSION}" > ./VERSION
   else
-    # latest versions
-    URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
-    VERSION=$(curl -s ${URL} | jq -r '.[] | .tag_name' | grep "${MAJOR}.${MINOR}." | cut -d'-' -f1 | sort -Vr | head -1)
+    if [ "${GITHUB_TOKEN}" != "" ]; then
+      AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 
-    if [ -z ${VERSION} ]; then
+      URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
+      curl \
+        -sSL \
+        -H "${AUTH_HEADER}" \
+        ${URL} > /tmp/releases
+    else
+      URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
+      curl \
+        -sSL \
+        ${URL} > /tmp/releases
+    fi
+
+    VERSION=$(cat /tmp/releases | jq -r '.[] | .tag_name' | grep "${MAJOR}.${MINOR}." | cut -d'-' -f1 | sort -Vr | head -1)
+
+    if [ -z "${VERSION}" ]; then
       VERSION="${MAJOR}.${MINOR}.0"
     fi
 
@@ -255,8 +268,19 @@ _release_pre() {
 
 _release_id() {
   URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
+<<<<<<< HEAD
   RELEASE_ID=$(curl -s ${URL} | TAG_NAME=${TAG_NAME} jq -r '.[] | select(.tag_name == env.TAG_NAME) | .id' | xargs)
   _result "RELEASE_ID: ${RELEASE_ID}"
+=======
+  curl \
+    -sSL \
+    -H "${AUTH_HEADER}" \
+    ${URL} > /tmp/releases
+
+  RELEASE_ID=$(cat /tmp/releases | TAG_NAME=${TAG_NAME} jq -r '.[] | select(.tag_name == env.TAG_NAME) | .id' | xargs)
+
+  echo "RELEASE_ID: ${RELEASE_ID}"
+>>>>>>> 184315be8ce7f0db31d77dfd845154ba16185799
 }
 
 _release_check() {
