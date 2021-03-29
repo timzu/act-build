@@ -268,10 +268,6 @@ _release_pre() {
 
 _release_id() {
   URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
-<<<<<<< HEAD
-  RELEASE_ID=$(curl -s ${URL} | TAG_NAME=${TAG_NAME} jq -r '.[] | select(.tag_name == env.TAG_NAME) | .id' | xargs)
-  _result "RELEASE_ID: ${RELEASE_ID}"
-=======
   curl \
     -sSL \
     -H "${AUTH_HEADER}" \
@@ -280,7 +276,6 @@ _release_id() {
   RELEASE_ID=$(cat /tmp/releases | TAG_NAME=${TAG_NAME} jq -r '.[] | select(.tag_name == env.TAG_NAME) | .id' | xargs)
 
   echo "RELEASE_ID: ${RELEASE_ID}"
->>>>>>> 184315be8ce7f0db31d77dfd845154ba16185799
 }
 
 _release_check() {
