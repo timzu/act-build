@@ -8,4 +8,4 @@ branding:
 
 runs:
   using: docker
-  image: docker://timzu/github-actions-docker:v0.3.3
+  image: docker://timzu/github-actions-build:v0.3.3

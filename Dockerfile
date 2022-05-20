@@ -6,7 +6,7 @@ LABEL "com.github.actions.icon"="box"
 LABEL "com.github.actions.color"="blue"
 
 LABEL version=v0.3.3
-LABEL repository="https://github.com/timzu/github-actions-docker"
+LABEL repository="https://github.com/timzu/github-actions-build"
 LABEL maintainer="Timur Galeev <timur_galeev@outlook.com>"
 
 ADD entrypoint.sh /entrypoint.sh

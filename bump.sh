@@ -64,7 +64,7 @@ echo "VERSION=${VERSION}"
 # ./VERSION :: v1.2.3
 echo ${VERSION} > ./VERSION
 
-# ./action.yml :: docker://timzu/github-actions-docker:v0.1.1
+# ./action.yml :: docker://timzu/github-actions-build:v0.1.1
 _replace "s/${BASENAME}:.*/${BASENAME}:${VERSION}/g" ./action.yml
 
 # ./Dockerfile :: LABEL version=v1.2.3

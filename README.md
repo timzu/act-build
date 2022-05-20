@@ -1,7 +1,7 @@
 # GitHub Action Build Docker
 
-[![GitHub Actions status](https://github.com/timzu/github-actions-docker/workflows/Build-Tag/badge.svg)](https://github.com/timzu/github-actions-docker/actions)
-[![GitHub Releases](https://img.shields.io/github/release/timzu/github-actions-docker.svg)](https://github.com/timzu/github-actions-docker/releases)
+[![GitHub Actions status](https://github.com/timzu/github-actions-build/workflows/Build-Tag/badge.svg)](https://github.com/timzu/github-actions-build/actions)
+[![GitHub Releases](https://img.shields.io/github/release/timzu/github-actions-build.svg)](https://github.com/timzu/github-actions-build/releases)
 
 
 ## Usage
@@ -21,12 +21,12 @@ jobs:
           fetch-depth: 1
 
       - name: Bump Version
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --version
 
       - name: Commit & Push to GitHub
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --commit
         env:
@@ -34,7 +34,7 @@ jobs:
           MESSAGE_PATH: ./target/commit_message
 
       - name: Publish to AWS S3
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --publish
         env:
@@ -46,7 +46,7 @@ jobs:
           OPTIONS: "--acl public-read"
 
       - name: Release to GitHub
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --release
         env:
@@ -55,7 +55,7 @@ jobs:
           TAG_NAME: "v0.0.1"
 
       - name: Docker Build & Push to Docker Hub
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --docker
         env:
@@ -67,7 +67,7 @@ jobs:
           LATEST: "true"
 
       - name: Docker Build & Push to GitHub Package
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --docker
         env:
@@ -80,7 +80,7 @@ jobs:
           LATEST: "true"
 
       - name: Docker Build & Push to AWS ECR
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --ecr
         env:
@@ -92,7 +92,7 @@ jobs:
           LATEST: "true"
 
       - name: Post to Slack
-        uses: timzu/github-actions-docker@master
+        uses: timzu/github-actions-build@master
         with:
           args: --slack
         env:
