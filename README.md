@@ -1,4 +1,4 @@
-# Action Build
+# GitHub Action Build Docker
 
 [![GitHub Actions status](https://github.com/timzu/github-actions-docker/workflows/Build-Tag/badge.svg)](https://github.com/timzu/github-actions-docker/actions)
 [![GitHub Releases](https://img.shields.io/github/release/timzu/github-actions-docker.svg)](https://github.com/timzu/github-actions-docker/releases)
