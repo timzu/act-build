@@ -17,6 +17,11 @@ _echo() {
   fi
 }
 
+_output() {
+  echo
+  echo "::set-output name=$1::$2"
+}
+
 _result() {
   echo
   _echo "# $@" 4
@@ -36,7 +41,6 @@ _success() {
 _error() {
   echo
   _echo "- $@" 1
-
   if [ "${LOOSE_ERROR}" == "true" ]; then
     exit 0
   else
@@ -62,7 +66,7 @@ _aws_pre() {
   fi
 
   if [ -z "${AWS_REGION}" ]; then
-    AWS_REGION="eu-central-1"
+    AWS_REGION="us-east-1"
   fi
 }
 
@@ -99,6 +103,8 @@ _version() {
 
     VERSION=$(cat /tmp/releases | jq -r '.[] | .tag_name' | grep "${MAJOR}.${MINOR}." | cut -d'-' -f1 | sort -Vr | head -1)
 
+    # VERSION=$(git describe --abbrev=0 --tags)
+
     if [ -z "${VERSION}" ]; then
       VERSION="${MAJOR}.${MINOR}.0"
     fi
@@ -106,7 +112,7 @@ _version() {
     _result "VERSION: ${VERSION}"
 
     # new version
-    if [ "${GITHUB_REF}" == "refs/heads/master" ]; then
+    if [ "${GITHUB_REF}" == "refs/heads/main" ] || [ "${GITHUB_REF}" == "refs/heads/master" ]; then
       VERSION=$(echo ${VERSION} | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
     else
       if [ "${GITHUB_REF}" != "" ]; then
@@ -118,7 +124,7 @@ _version() {
       if [ "${PR_CMD}" == "pull" ] && [ "${PR_NUM}" != "" ]; then
         VERSION="${VERSION}-${PR_NUM}"
       else
-        VERSION=""
+        VERSION="${VERSION}"
       fi
     fi
 
@@ -128,6 +134,8 @@ _version() {
   fi
 
   _result "VERSION: ${VERSION}"
+
+  _output "version" "${VERSION}"
 }
 
 _commit_pre() {
@@ -254,7 +262,9 @@ _release_pre() {
   fi
 
   if [ -z "${TARGET_COMMITISH}" ]; then
-    TARGET_COMMITISH="master"
+    _result "GITHUB_REF: ${GITHUB_REF}"
+
+    TARGET_COMMITISH="$(echo ${GITHUB_REF} | cut -d'/' -f3)"
   fi
 
   if [ "${DRAFT}" != "true" ]; then
@@ -275,7 +285,7 @@ _release_id() {
 
   RELEASE_ID=$(cat /tmp/releases | TAG_NAME=${TAG_NAME} jq -r '.[] | select(.tag_name == env.TAG_NAME) | .id' | xargs)
 
-  echo "RELEASE_ID: ${RELEASE_ID}"
+  _result "RELEASE_ID: ${RELEASE_ID}"
 }
 
 _release_check() {
@@ -298,6 +308,8 @@ _release_check() {
   if [ -z "${RELEASE_ID}" ]; then
     _error "RELEASE_ID is not set."
   fi
+
+  _output "release_id" "${RELEASE_ID}"
 }
 
 _release_assets() {
@@ -331,6 +343,7 @@ _release() {
   AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
 
   _release_id
+
   if [ ! -z "${RELEASE_ID}" ]; then
     _command "github releases delete ${RELEASE_ID}"
     URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"
@@ -352,7 +365,7 @@ _release() {
     ${URL} <<END
 {
   "tag_name": "${TAG_NAME}",
-  "target_commitish": "${TARGET_COMMITISH}",
+  "target_commitish": "${TARGET_COMMITISH:-master}",
   "name": "${NAME}",
   "body": "${BODY}",
   "draft": ${DRAFT},
@@ -377,11 +390,11 @@ _dispatch_pre() {
   fi
 
   if [ -z "${EVENT_TYPE}" ]; then
-    EVENT_TYPE="build"
+    EVENT_TYPE="gitops"
   fi
 
-  if [ -z "${TARGET_ID}" ]; then
-    TARGET_ID="${GITHUB_REPOSITORY}"
+  if [ -z "${PROJECT}" ]; then
+    PROJECT="${GITHUB_REPOSITORY}"
   fi
 
   if [ -z "${VERSION}" ]; then
@@ -399,23 +412,13 @@ _dispatch_pre() {
 _dispatch() {
   _dispatch_pre
 
-  AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
+  _command "github dispatches create ${GITOPS_REPO} ${EVENT_TYPE} ${PROJECT} ${VERSION} ${PHASE} ${CONTAINER} ${ACTION}"
 
-  ACCEPT_HEADER="Accept: application/vnd.github.v3+json"
-
-  _command "github dispatches create ${GITOPS_REPO} ${EVENT_TYPE} ${TARGET_ID} ${VERSION}"
-  URL="https://api.github.com/repos/${GITOPS_REPO}/dispatches"
-  curl \
-    -sSL \
-    -X POST \
-    -H "${AUTH_HEADER}" \
-    -H "${ACCEPT_HEADER}" \
-     --data @- \
-    ${URL} <<END
-{
-  "event_type": "${EVENT_TYPE}"
-}
-END
+  curl -sL -X POST \
+    -H "Accept: application/vnd.github.v3+json" \
+    -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+    -d "{\"event_type\":\"${EVENT_TYPE}\",\"client_payload\":{\"username\":\"${USERNAME}\",\"project\":\"${PROJECT}\",\"version\":\"${VERSION}\",\"phase\":\"${PHASE}\",\"container\":\"${CONTAINER}\",\"action\":\"${ACTION}\"}}" \
+    https://api.github.com/repos/${GITOPS_REPO}/dispatches
 }
 
 _docker_tag() {
@@ -441,7 +444,7 @@ _docker_tag() {
   fi
 }
 
-_docker_push() {
+_docker_build() {
   _command "docker build ${DOCKER_BUILD_ARGS} -t ${IMAGE_URI}:${TAG_NAME} -f ${DOCKERFILE} ${BUILD_PATH}"
   docker build ${DOCKER_BUILD_ARGS} -t ${IMAGE_URI}:${TAG_NAME} -f ${DOCKERFILE} ${BUILD_PATH}
 
@@ -461,6 +464,70 @@ _docker_push() {
   fi
 }
 
+# _docker_builds() {
+#   TAG_NAMES=""
+
+#   ARR=(${PLATFORM//,/ })
+
+#   for V in ${ARR[@]}; do
+#       P="${V//\//-}"
+
+#       _command "docker build ${DOCKER_BUILD_ARGS} --build-arg ARCH=${V} -t ${IMAGE_URI}:${TAG_NAME}-${P} -f ${DOCKERFILE} ${BUILD_PATH}"
+#       docker build ${DOCKER_BUILD_ARGS} --build-arg ARCH=${V} -t ${IMAGE_URI}:${TAG_NAME}-${P} -f ${DOCKERFILE} ${BUILD_PATH}
+
+#       _error_check
+
+#       _command "docker push ${IMAGE_URI}:${TAG_NAME}-${P}"
+#       docker push ${IMAGE_URI}:${TAG_NAME}-${P}
+
+#       _error_check
+
+#       TAG_NAMES="${TAG_NAMES} -a ${IMAGE_URI}:${TAG_NAME}-${P}"
+#   done
+
+#   _docker_manifest ${IMAGE_URI}:${TAG_NAME} ${TAG_NAMES}
+
+#   # if [ "${LATEST}" == "true" ]; then
+#   #   _docker_manifest ${IMAGE_URI}:latest -a ${TAG_NAMES}
+#   # fi
+# }
+
+# _docker_manifest() {
+#   _command "docker manifest create ${@}"
+#   docker manifest create ${@}
+
+#   _error_check
+
+#   _command "docker manifest inspect ${1}"
+#   docker manifest inspect ${1}
+
+#   _command "docker manifest push ${1}"
+#   docker manifest push ${1}
+# }
+
+_docker_buildx() {
+  if [ -z "${PLATFORM}" ]; then
+    PLATFORM="linux/arm64,linux/amd64"
+  fi
+
+  PLACE=$(date +%s)
+
+  _command "docker buildx create --use --name ops-${PLACE}"
+  docker buildx create --use --name ops-${PLACE}
+
+  _command "docker buildx build ${DOCKER_BUILD_ARGS} -t ${IMAGE_URI}:${TAG_NAME} -f ${DOCKERFILE} ${BUILD_PATH}"
+  docker buildx build --push ${DOCKER_BUILD_ARGS} -t ${IMAGE_URI}:${TAG_NAME} -f ${DOCKERFILE} ${BUILD_PATH} --platform ${PLATFORM}
+
+  _error_check
+
+  _command "docker buildx imagetools inspect ${IMAGE_URI}:${TAG_NAME}"
+  docker buildx imagetools inspect ${IMAGE_URI}:${TAG_NAME}
+
+  # if [ "${LATEST}" == "true" ]; then
+  #   _docker_manifest ${IMAGE_URI}:latest -a ${IMAGE_URI}:${TAG_NAME}
+  # fi
+}
+
 _docker_pre() {
   if [ -z "${USERNAME}" ]; then
     _error "USERNAME is not set."
@@ -478,13 +545,22 @@ _docker_pre() {
     DOCKERFILE="Dockerfile"
   fi
 
+  if [ -z "${IMAGE_NAME}" ]; then
+    if [ "${REGISTRY}" == "docker.pkg.github.com" ]; then
+      IMAGE_NAME="${REPONAME}"
+    else
+      IMAGE_NAME="${REPOSITORY}"
+    fi
+  fi
+
   if [ -z "${IMAGE_URI}" ]; then
     if [ -z "${REGISTRY}" ]; then
-      IMAGE_URI="${IMAGE_NAME:-${REPOSITORY}}"
+      IMAGE_URI="${IMAGE_NAME}"
     elif [ "${REGISTRY}" == "docker.pkg.github.com" ]; then
-      IMAGE_URI="${REGISTRY}/${REPOSITORY}/${IMAGE_NAME:-${REPONAME}}"
+      # :owner/:repo_name/:image_name
+      IMAGE_URI="${REGISTRY}/${REPOSITORY}/${IMAGE_NAME}"
     else
-      IMAGE_URI="${REGISTRY}/${IMAGE_NAME:-${REPOSITORY}}"
+      IMAGE_URI="${REGISTRY}/${IMAGE_NAME}"
     fi
   fi
 
@@ -499,7 +575,16 @@ _docker() {
 
   _error_check
 
-  _docker_push
+  if [ "${BUILDX}" == "true" ]; then
+    _docker_buildx
+  else
+    _docker_build
+    # if [ "${PLATFORM}" == "" ]; then
+    #   _docker_build
+    # else
+    #   _docker_builds
+    # fi
+  fi
 
   _command "docker logout"
   docker logout
@@ -520,12 +605,22 @@ _docker_ecr_pre() {
     DOCKERFILE="Dockerfile"
   fi
 
+  if [ -z "${REGISTRY}" ]; then
+    REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+  fi
+
+  PUBLIC=$(echo ${REGISTRY} | cut -d'.' -f1)
+
   if [ -z "${IMAGE_NAME}" ]; then
-    IMAGE_NAME="${REPOSITORY}"
+    if [ "${PUBLIC}" == "public" ]; then
+      IMAGE_NAME="${REPONAME}"
+    else
+      IMAGE_NAME="${REPOSITORY}"
+    fi
   fi
 
   if [ -z "${IMAGE_URI}" ]; then
-    IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
+    IMAGE_URI="${REGISTRY}/${IMAGE_NAME}"
   fi
 
   _docker_tag
@@ -546,22 +641,40 @@ ${AWS_REGION}
 text
 EOF
 
-  # https://docs.aws.amazon.com/cli/latest/reference/ecr/get-login.html
-  # _command "aws ecr get-login --no-include-email"
-  # aws ecr get-login --no-include-email | sh
-
-  _command "aws ecr get-login-password ${AWS_ACCOUNT_ID} ${AWS_REGION}"
-  aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/
+  if [ "${PUBLIC}" == "public" ]; then
+    _command "aws ecr-public get-login-password --region us-east-1 ${REGISTRY}"
+    aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${REGISTRY}
+  else
+    _command "aws ecr get-login-password --region ${AWS_REGION} ${REGISTRY}"
+    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REGISTRY}
+  fi
 
   _error_check
 
-  COUNT=$(aws ecr describe-repositories --output json | jq '.repositories[] | .repositoryName' | grep "\"${IMAGE_NAME}\"" | wc -l | xargs)
-  if [ "x${COUNT}" == "x0" ]; then
-    _command "aws ecr create-repository ${IMAGE_NAME}"
-    aws ecr create-repository --repository-name ${IMAGE_NAME} --image-tag-mutability ${IMAGE_TAG_MUTABILITY}
+  if [ "${PUBLIC}" == "public" ]; then
+    COUNT=$(aws ecr-public describe-repositories --region us-east-1 --output json | jq '.repositories[] | .repositoryName' | grep "\"${IMAGE_NAME}\"" | wc -l | xargs)
+    if [ "x${COUNT}" == "x0" ]; then
+      _command "aws ecr-public create-repository ${IMAGE_NAME}"
+      aws ecr-public create-repository --repository-name ${IMAGE_NAME} --region us-east-1
+    fi
+  else
+    COUNT=$(aws ecr describe-repositories --output json | jq '.repositories[] | .repositoryName' | grep "\"${IMAGE_NAME}\"" | wc -l | xargs)
+    if [ "x${COUNT}" == "x0" ]; then
+      _command "aws ecr create-repository ${IMAGE_NAME}"
+      aws ecr create-repository --repository-name ${IMAGE_NAME} --image-tag-mutability ${IMAGE_TAG_MUTABILITY}
+    fi
   fi
 
-  _docker_push
+  if [ "${BUILDX}" == "true" ]; then
+    _docker_buildx
+  else
+    _docker_build
+    # if [ "${PLATFORM}" == "" ]; then
+    #   _docker_build
+    # else
+    #   _docker_builds
+    # fi
+  fi
 }
 
 _slack_pre() {
@@ -590,7 +703,7 @@ if [ -z "${CMD}" ]; then
   _error
 fi
 
-_command "[${CMD:2}] start..."
+_result "[${CMD:2}] start..."
 
 case "${CMD:2}" in
   version)
