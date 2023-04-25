@@ -1,4 +1,4 @@
-FROM timzu/build-image:v0.2.5
+FROM timzu/docker-builder:v0.2.5
 
 LABEL "com.github.actions.name"="Active Build Stage"
 LABEL "com.github.actions.description"="GitHub Action Builder"
