@@ -1,11 +1,11 @@
-FROM timzu/docker-builder:v0.2.10
+FROM timzu/docker-builder:v0.2.11
 
 LABEL "com.github.actions.name"="Active Build Stage"
 LABEL "com.github.actions.description"="GitHub Action Builder"
 LABEL "com.github.actions.icon"="box"
 LABEL "com.github.actions.color"="blue"
 
-LABEL version=v0.3.27
+LABEL version=v0.3.28
 LABEL repository="https://github.com/timzu/github-actions-build"
 LABEL maintainer="Timur Galeev <timur_galeev@outlook.com>"
 
