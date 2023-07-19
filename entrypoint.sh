@@ -148,7 +148,7 @@ _commit_pre() {
   fi
 
   if [ -z "${GIT_USEREMAIL}" ]; then
-    GIT_USEREMAIL="bot@nalbam.com"
+    GIT_USEREMAIL="timur_galeev@outlook.com"
   fi
 
   if [ -z "${GIT_BRANCH}" ]; then
