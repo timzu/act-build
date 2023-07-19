@@ -464,47 +464,6 @@ _docker_build() {
   fi
 }
 
-# _docker_builds() {
-#   TAG_NAMES=""
-
-#   ARR=(${PLATFORM//,/ })
-
-#   for V in ${ARR[@]}; do
-#       P="${V//\//-}"
-
-#       _command "docker build ${DOCKER_BUILD_ARGS} --build-arg ARCH=${V} -t ${IMAGE_URI}:${TAG_NAME}-${P} -f ${DOCKERFILE} ${BUILD_PATH}"
-#       docker build ${DOCKER_BUILD_ARGS} --build-arg ARCH=${V} -t ${IMAGE_URI}:${TAG_NAME}-${P} -f ${DOCKERFILE} ${BUILD_PATH}
-
-#       _error_check
-
-#       _command "docker push ${IMAGE_URI}:${TAG_NAME}-${P}"
-#       docker push ${IMAGE_URI}:${TAG_NAME}-${P}
-
-#       _error_check
-
-#       TAG_NAMES="${TAG_NAMES} -a ${IMAGE_URI}:${TAG_NAME}-${P}"
-#   done
-
-#   _docker_manifest ${IMAGE_URI}:${TAG_NAME} ${TAG_NAMES}
-
-#   # if [ "${LATEST}" == "true" ]; then
-#   #   _docker_manifest ${IMAGE_URI}:latest -a ${TAG_NAMES}
-#   # fi
-# }
-
-# _docker_manifest() {
-#   _command "docker manifest create ${@}"
-#   docker manifest create ${@}
-
-#   _error_check
-
-#   _command "docker manifest inspect ${1}"
-#   docker manifest inspect ${1}
-
-#   _command "docker manifest push ${1}"
-#   docker manifest push ${1}
-# }
-
 _docker_buildx() {
   if [ -z "${PLATFORM}" ]; then
     PLATFORM="linux/arm64,linux/amd64"
@@ -523,9 +482,6 @@ _docker_buildx() {
   _command "docker buildx imagetools inspect ${IMAGE_URI}:${TAG_NAME}"
   docker buildx imagetools inspect ${IMAGE_URI}:${TAG_NAME}
 
-  # if [ "${LATEST}" == "true" ]; then
-  #   _docker_manifest ${IMAGE_URI}:latest -a ${IMAGE_URI}:${TAG_NAME}
-  # fi
 }
 
 _docker_pre() {
