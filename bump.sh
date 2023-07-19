@@ -2,9 +2,6 @@
 
 OS_NAME="$(uname | awk '{print tolower($0)}')"
 
-################################################################################
-
-# command -v tput > /dev/null && TPUT=true
 TPUT=
 
 _echo() {
@@ -45,8 +42,6 @@ _replace() {
     fi
 }
 
-################################################################################
-
 if [ ! -f ./VERSION ]; then
   printf "v0.0.x" > ./VERSION
 fi
@@ -64,8 +59,6 @@ echo "VERSION=${VERSION}"
 # ./VERSION :: v1.2.3
 echo ${VERSION} > ./VERSION
 
-# ./action.yml :: docker://timzu/github-actions-build:v0.3.1
 _replace "s/${BASENAME}:.*/${BASENAME}:${VERSION}/g" ./action.yml
 
-# ./Dockerfile :: LABEL version=v1.2.3
 _replace "s/LABEL version=.*/LABEL version=${VERSION}/g" ./Dockerfile
